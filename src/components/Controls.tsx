@@ -3,6 +3,8 @@ import { useThree } from '@react-three/fiber'
 import { game } from '../game/state'
 import { clamp } from '../game/constants'
 import { tryEnterExit, doAction, shoot, respawnPlayer, reload, switchWeapon } from '../game/systems'
+import { queueInputEvent } from '../game/input'
+import { WEAPONS } from '../game/weapons'
 import { useGame } from '../store/useGame'
 
 const BASE_LOOK = 0.0022 // base radians per pixel; scaled by settings.mouseSensitivity
@@ -18,13 +20,21 @@ export default function Controls() {
       const k = e.key.toLowerCase()
       game.keys[k] = true
       if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright', ' '].includes(k)) e.preventDefault()
-      if (k === 'e') tryEnterExit()
-      if (k === 'f') doAction()
-      if (k === 'r') respawnPlayer()
-      if (k === 'g') reload()
-      if (k === '1') switchWeapon(0)
-      if (k === '2') switchWeapon(1)
-      if (k === '3') switchWeapon(2)
+      if (k === ' ' && !game.player.inCar) game.jumpQueued = true
+      // Solo/host act locally (own copy of the world); a client only queues
+      // the semantic action, sent to the host over the network next tick.
+      const act = (event: string, local: () => void) =>
+        game.netRole === 'client' ? queueInputEvent(event) : local()
+      if (k === 'e') act('enter', tryEnterExit)
+      if (k === 'f') act('action', doAction)
+      if (k === 'r') act('respawn', respawnPlayer)
+      if (k === 'g') act('reload', reload)
+      // '1'..'9' select a weapon slot by index — scales with WEAPONS.length
+      // rather than a fixed count of keybinds.
+      const slot = Number(k)
+      if (Number.isInteger(slot) && slot >= 1 && slot <= WEAPONS.length) {
+        act(`weapon${slot - 1}`, () => switchWeapon(slot - 1))
+      }
       if (k === 'c') game.camDist = game.camDist > 200 ? 110 : game.camDist > 120 ? 260 : 150
     }
     const onKeyUp = (e: KeyboardEvent) => {
@@ -35,8 +45,10 @@ export default function Controls() {
     }
     const onMouseDown = (e: MouseEvent) => {
       if (!game.started || !game.locked || game.player.inCar) return
-      if (e.button === 0) shoot()
-      else if (e.button === 2) reload()
+      const act = (event: string, local: () => void) =>
+        game.netRole === 'client' ? queueInputEvent(event) : local()
+      if (e.button === 0) act('shoot', shoot)
+      else if (e.button === 2) act('reload', reload)
     }
     const onContextMenu = (e: MouseEvent) => e.preventDefault()
     const onLockChange = () => {

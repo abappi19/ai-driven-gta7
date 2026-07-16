@@ -8,6 +8,8 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
+    "host": "vite build --base=/ && node server/relay.mjs",
+    "relay:dev": "node server/relay.mjs --relay-only --port 8081",
     "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.node.json",
     "lint": "eslint .",
     "format": "prettier --write \"src/**/*.{ts,tsx,css}\" \"*.{js,json}\"",
@@ -18,7 +20,9 @@
     "@react-three/fiber": "^9.6.1",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
+    "sirv": "^3.0.2",
     "three": "^0.185.0",
+    "ws": "^8.21.1",
     "zustand": "^5.0.14"
   },
   "devDependencies": {

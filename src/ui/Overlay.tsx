@@ -1,6 +1,10 @@
+import { useState } from 'react'
 import { useGame } from '../store/useGame'
 import { startRun } from '../game/systems'
 import Settings from './Settings'
+import Multiplayer from './Multiplayer'
+
+type Panel = 'none' | 'settings' | 'multiplayer'
 
 // Menu (phase 'menu') and game-over (phase 'wasted') screen.
 export default function Overlay() {
@@ -8,8 +12,7 @@ export default function Overlay() {
   const modelsReady = useGame((s) => s.modelsReady)
   const hud = useGame((s) => s.hud)
   const profile = useGame((s) => s.profile)
-  const showSettings = useGame((s) => s.showSettings)
-  const toggleSettings = useGame((s) => s.toggleSettings)
+  const [panel, setPanel] = useState<Panel>('none')
   const wasted = phase === 'wasted'
 
   return (
@@ -22,9 +25,9 @@ export default function Overlay() {
             : 'Liberty Streets · React + R3F'}
         </div>
 
-        {showSettings ? (
-          <Settings />
-        ) : (
+        {panel === 'settings' && <Settings />}
+        {panel === 'multiplayer' && <Multiplayer />}
+        {panel === 'none' && (
           <>
             <button disabled={!modelsReady} onClick={() => startRun()}>
               {modelsReady ? (wasted ? 'RESPAWN' : 'ENTER THE CITY') : 'LOADING MODELS…'}
@@ -35,7 +38,7 @@ export default function Overlay() {
             </div>
             {!wasted && (
               <div className="keys">
-                <b>Move mouse</b> to look · <b>Click</b> shoot · <b>RMB/G</b> reload · <b>1-3</b>{' '}
+                <b>Move mouse</b> to look · <b>Click</b> shoot · <b>RMB/G</b> reload · <b>1-7</b>{' '}
                 weapons · <b>WASD</b> move &amp; drive · <b>E</b> enter / exit
                 <br />
                 <b>Q</b> Focus slow-mo · <b>Shift</b> boost · <b>Space</b> handbrake · <b>C</b>{' '}
@@ -47,9 +50,24 @@ export default function Overlay() {
           </>
         )}
 
-        <button className="link-btn" onClick={() => toggleSettings()}>
-          {showSettings ? '← Back' : '⚙ Settings'}
-        </button>
+        <div className="link-row">
+          {panel === 'none' ? (
+            <>
+              {!wasted && (
+                <button className="link-btn" onClick={() => setPanel('multiplayer')}>
+                  🌐 Multiplayer
+                </button>
+              )}
+              <button className="link-btn" onClick={() => setPanel('settings')}>
+                ⚙ Settings
+              </button>
+            </>
+          ) : (
+            <button className="link-btn" onClick={() => setPanel('none')}>
+              ← Back
+            </button>
+          )}
+        </div>
       </div>
       <div className="byline">
         an AI-driven Bappi build · React + react-three-fiber · made with Kitten Bot

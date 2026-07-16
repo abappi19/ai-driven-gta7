@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useGame } from '../store/useGame'
 import type { Toast } from '../store/useGame'
+import { startRace } from '../game/systems'
 import Minimap from './Minimap'
 
 function Stars({ n }: { n: number }) {
@@ -11,6 +12,63 @@ function Stars({ n }: { n: number }) {
           ★
         </span>
       ))}
+    </div>
+  )
+}
+
+function Roster() {
+  const roster = useGame((s) => s.roster)
+  if (roster.length < 2) return null
+  return (
+    <div className="roster">
+      {roster.map((p) => (
+        <div key={p.id} className="roster-row">
+          <span className="roster-name">
+            {p.name}
+            {p.isLocal ? ' (you)' : ''}
+          </span>
+          <div className="bar hp roster-hp">
+            <i style={{ width: p.hp + '%' }} />
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+// Multiplayer-only: host starts a race when idle; everyone sees countdown ->
+// checkpoint progress -> results once one's underway.
+function RacePanel() {
+  const raceInfo = useGame((s) => s.raceInfo)
+  const netRole = useGame((s) => s.netRole)
+
+  if (!raceInfo) {
+    if (netRole !== 'host') return null
+    return (
+      <button className="race-start-btn" onClick={() => startRace()}>
+        🏁 Start Race
+      </button>
+    )
+  }
+  return (
+    <div className="panel race-panel">
+      {raceInfo.phase === 'countdown' && <div className="race-countdown">{raceInfo.countdown}</div>}
+      {raceInfo.phase === 'racing' && (
+        <div className="race-progress">
+          Checkpoint {Math.min(raceInfo.myCheckpoint + 1, raceInfo.totalCheckpoints)}/
+          {raceInfo.totalCheckpoints}
+        </div>
+      )}
+      {raceInfo.phase === 'finished' && (
+        <div className="race-results">
+          <h3>🏁 Race Results</h3>
+          {raceInfo.results.map((r) => (
+            <div key={r.place}>
+              {r.place}. {r.name}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
@@ -62,11 +120,14 @@ export default function HUD() {
               <i style={{ width: hud.focus + '%' }} />
             </div>
           </div>
+          <Roster />
         </div>
 
         <div className="panel mini">
           <Minimap />
         </div>
+
+        <RacePanel />
 
         <div className="panel mission">
           <h3>
@@ -86,7 +147,7 @@ export default function HUD() {
         )}
 
         <div className="controls">
-          <b>Mouse</b> Look · <b>Click</b> Shoot · <b>RMB/G</b> Reload · <b>1-3</b> Weapon ·{' '}
+          <b>Mouse</b> Look · <b>Click</b> Shoot · <b>RMB/G</b> Reload · <b>1-7</b> Weapon ·{' '}
           <b>Scroll</b> Zoom
           <br />
           <b>WASD</b> Move/Drive · <b>E</b> Enter/Exit · <b>Q</b> Focus · <b>Shift</b> Boost ·{' '}

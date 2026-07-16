@@ -91,6 +91,31 @@ canvas {
   background: linear-gradient(90deg, #a06bff, #5bd6ff);
 }
 
+.roster {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+.roster-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+  font-size: 12px;
+}
+.roster-name {
+  flex: 1;
+  opacity: 0.85;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.roster-hp {
+  width: 60px;
+  height: 6px;
+  margin-top: 0;
+}
+
 .mini {
   top: 16px;
   right: 16px;
@@ -103,6 +128,54 @@ canvas {
 .mini canvas {
   width: 100%;
   height: 100%;
+}
+
+.race-start-btn {
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  pointer-events: auto;
+  cursor: pointer;
+  background: linear-gradient(90deg, #3ddc84, #2bb673);
+  color: #06210f;
+  border: none;
+  padding: 10px 22px;
+  font-size: 14px;
+  font-weight: 800;
+  border-radius: 30px;
+  letter-spacing: 0.5px;
+  box-shadow: 0 6px 20px rgba(61, 220, 132, 0.4);
+}
+.race-panel {
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+  min-width: 200px;
+}
+.race-countdown {
+  font-size: 40px;
+  font-weight: 900;
+  color: #3ddc84;
+  text-shadow: 0 0 20px rgba(61, 220, 132, 0.6);
+}
+.race-progress {
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: #3ddc84;
+}
+.race-results h3 {
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: #3ddc84;
+  margin-bottom: 6px;
+}
+.race-results div {
+  font-size: 14px;
+  margin-top: 2px;
 }
 
 .mission {
@@ -345,6 +418,44 @@ canvas {
 .overlay .link-btn:hover {
   transform: none;
   border-color: rgba(255, 255, 255, 0.5);
+}
+.overlay .link-row {
+  display: flex;
+  gap: 10px;
+}
+
+/* ---------- multiplayer / lobby ---------- */
+.text-input {
+  flex: 1.2;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  color: #fff;
+  padding: 6px 10px;
+  font-size: 14px;
+}
+.text-input:focus {
+  outline: none;
+  border-color: #ffb13d;
+}
+.net-actions {
+  margin: 14px 0;
+  text-align: left;
+}
+.net-actions button {
+  margin-top: 6px;
+}
+.net-error {
+  margin-top: 10px;
+  color: #ff6b6b;
+  font-size: 13px;
+  max-width: 420px;
+}
+.net-status {
+  margin-top: 10px;
+  color: #ffd33d;
+  font-size: 13px;
+  max-width: 420px;
 }
 
 .settings-card {

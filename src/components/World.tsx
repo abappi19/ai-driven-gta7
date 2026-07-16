@@ -4,7 +4,9 @@ import { Cars, Police } from './Vehicles'
 import Pedestrians from './Pedestrians'
 import Pickups from './Pickups'
 import Player from './Player'
+import RemotePlayers from './RemotePlayers'
 import MissionMarker from './MissionMarker'
+import RaceCheckpoints from './RaceCheckpoints'
 import Effects from './Effects'
 import CameraRig from './CameraRig'
 import Systems from './Systems'
@@ -21,7 +23,9 @@ export default function World() {
       <Pedestrians />
       <Pickups />
       <Player />
+      <RemotePlayers />
       <MissionMarker />
+      <RaceCheckpoints />
       <Effects />
       <CameraRig />
       <Systems />
