@@ -7,6 +7,13 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   base: '/gta7-web/',
   plugins: [react()],
+  server: {
+    // Proxies dev-mode WS traffic to the relay-only dev server (`npm run relay:dev`)
+    // so the browser sees the socket as same-origin during Phases 0-2.
+    proxy: {
+      '/ws': { target: 'ws://localhost:8081', ws: true },
+    },
+  },
   build: {
     outDir: 'dist',
     assetsInlineLimit: 0,

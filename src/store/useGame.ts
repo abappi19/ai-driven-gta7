@@ -1,8 +1,36 @@
 import { create } from 'zustand'
-import type { Settings, Profile } from '../game/types'
-import { loadSettings, saveSettings, loadProfile, saveProfile } from '../game/persist'
+import type { Settings, Profile, NetPrefs } from '../game/types'
+import {
+  loadSettings,
+  saveSettings,
+  loadProfile,
+  saveProfile,
+  loadNetPrefs,
+  saveNetPrefs,
+} from '../game/persist'
 
-export type Phase = 'menu' | 'playing' | 'wasted'
+export type Phase = 'menu' | 'lobby' | 'playing' | 'wasted'
+export type NetRole = 'solo' | 'host' | 'client'
+export type NetStatus = 'idle' | 'connecting' | 'connected' | 'error'
+export interface LobbyPlayer {
+  id: string
+  name: string
+}
+export interface RosterPlayer {
+  id: string
+  name: string
+  hp: number
+  isLocal: boolean
+}
+export interface RaceInfo {
+  phase: 'countdown' | 'racing' | 'finished'
+  countdown: number
+  lap: number
+  totalLaps: number
+  checkpointInLap: number
+  checkpointsPerLap: number
+  results: { name: string; place: number }[]
+}
 
 export interface Hud {
   money: number
@@ -34,6 +62,7 @@ interface Versions {
   peds: number
   police: number
   pickups: number
+  remotePlayers: number
 }
 
 interface UIStore {
@@ -48,7 +77,13 @@ interface UIStore {
   versions: Versions
   settings: Settings
   profile: Profile
-  showSettings: boolean
+  netRole: NetRole
+  netStatus: NetStatus
+  netError: string
+  lobbyPlayers: LobbyPlayer[]
+  netPrefs: NetPrefs
+  roster: RosterPlayer[]
+  raceInfo: RaceInfo | null
 
   setPhase: (phase: Phase) => void
   setModelsReady: (modelsReady: boolean) => void
@@ -61,7 +96,12 @@ interface UIStore {
   bump: (key: keyof Versions) => void
   setSettings: (patch: Partial<Settings>) => void
   setProfile: (profile: Profile) => void
-  toggleSettings: (v?: boolean) => void
+  setNetRole: (netRole: NetRole) => void
+  setNetStatus: (netStatus: NetStatus, netError?: string) => void
+  setLobbyPlayers: (players: LobbyPlayer[]) => void
+  setNetPrefs: (patch: Partial<NetPrefs>) => void
+  setRoster: (roster: RosterPlayer[]) => void
+  setRaceInfo: (raceInfo: RaceInfo | null) => void
 }
 
 const EMPTY_HUD: Hud = {
@@ -89,10 +129,16 @@ export const useGame = create<UIStore>((set) => ({
   missionInfo: { title: 'Objective', desc: 'Loading the city…' },
   focusActive: false,
   locked: false,
-  versions: { cars: 0, peds: 0, police: 0, pickups: 0 },
+  versions: { cars: 0, peds: 0, police: 0, pickups: 0, remotePlayers: 0 },
   settings: loadSettings(),
   profile: loadProfile(),
-  showSettings: false,
+  netRole: 'solo',
+  netStatus: 'idle',
+  netError: '',
+  lobbyPlayers: [],
+  netPrefs: loadNetPrefs(),
+  roster: [],
+  raceInfo: null,
 
   setPhase: (phase) => set({ phase }),
   setModelsReady: (modelsReady) => set({ modelsReady }),
@@ -114,5 +160,15 @@ export const useGame = create<UIStore>((set) => ({
     saveProfile(profile)
     set({ profile })
   },
-  toggleSettings: (v) => set((s) => ({ showSettings: v ?? !s.showSettings })),
+  setNetRole: (netRole) => set({ netRole }),
+  setNetStatus: (netStatus, netError = '') => set({ netStatus, netError }),
+  setLobbyPlayers: (lobbyPlayers) => set({ lobbyPlayers }),
+  setNetPrefs: (patch) =>
+    set((s) => {
+      const netPrefs = { ...s.netPrefs, ...patch }
+      saveNetPrefs(netPrefs)
+      return { netPrefs }
+    }),
+  setRoster: (roster) => set({ roster }),
+  setRaceInfo: (raceInfo) => set({ raceInfo }),
 }))

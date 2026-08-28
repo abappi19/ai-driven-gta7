@@ -80,6 +80,44 @@ export interface Mission {
   done?: boolean
 }
 
+// Multiplayer-only race event, host-triggered — a separate mode layered on
+// top of the shared world rather than part of the delivery/chase/survive
+// mission rotation.
+export interface RaceCheckpoint {
+  x: number
+  z: number
+  r: number
+}
+export interface RaceResult {
+  id: string
+  name: string
+  place: number
+}
+export interface RaceState {
+  phase: 'countdown' | 'racing' | 'finished'
+  countdown: number // seconds left before racing starts
+  checkpoints: RaceCheckpoint[] // the per-lap checkpoints repeated `laps` times
+  checkpointsPerLap: number
+  laps: number
+  progress: Record<string, number> // playerId -> index of their next checkpoint
+  results: RaceResult[]
+  resultsT: number // seconds left showing results before auto-clearing
+}
+
+// A dedicated rounded-rectangle racetrack: 4 straights (2*halfWidth wide,
+// 2*halfHeight tall) joined by 4 quarter-circle turns of cornerRadius,
+// centered at (cx, cz). Reserved as its own no-buildings zone in
+// generateCity() (see world.ts).
+export interface RaceTrack {
+  cx: number
+  cz: number
+  halfWidth: number
+  halfHeight: number
+  cornerRadius: number
+  width: number
+  perimeter: number
+}
+
 export interface Building {
   x: number
   z: number
@@ -109,20 +147,43 @@ export interface CityData {
   parks: ParkData[]
   cols: number
   rows: number
+  raceTrack: RaceTrack
 }
 
 export interface Player {
+  id: string
+  name: string
   x: number
   z: number
-  a: number
+  y: number
   vx: number
   vz: number
+  vy: number
+  a: number
   speed: number
   r: number
   hp: number
   inCar: Car | null
+  inCarId: number | null // wire-safe reference to `inCar.id`, used over the network
   punchT: number
   money: number
+  grounded: boolean
+  weapon: WeaponState
+}
+
+// Semantic input snapshot sent over the network — never raw keys, so the
+// wire protocol survives local keybind changes.
+export interface InputState {
+  up: boolean
+  down: boolean
+  left: boolean
+  right: boolean
+  boost: boolean
+  brake: boolean
+  jump: boolean
+  yaw: number
+  pitch: number
+  events: string[] // one-shot edge-triggered actions: 'enter' | 'action' | 'shoot' | 'reload' | ...
 }
 
 export interface WeaponState {
@@ -147,13 +208,19 @@ export interface GameState {
   buildings: Building[]
   cityData: CityData | null
   player: Player
+  players: Record<string, Player>
+  localPlayerId: string
+  remoteInputs: Record<string, InputState>
+  netRole: 'solo' | 'host' | 'client'
   mission: Mission | null
+  race: RaceState | null
   deliveries: number
   kills: number
   wanted: number
   wantedDecay: number
   busting: number
   keys: Record<string, boolean>
+  jumpQueued: boolean
   yaw: number
   pitch: number
   camDist: number
@@ -163,7 +230,6 @@ export interface GameState {
   focusActive: boolean
   timeScale: number
   simAccum: number
-  weapon: WeaponState
   events: GameEvent[]
 }
 
@@ -178,4 +244,9 @@ export interface Profile {
   totalDeliveries: number
   totalKills: number
   runs: number
+}
+
+export interface NetPrefs {
+  playerName: string
+  lastJoinedAddr: string
 }

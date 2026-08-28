@@ -3,6 +3,8 @@ export const TWO_PI = Math.PI * 2
 export const WORLD = { w: 4000, h: 4000 }
 export const BLOCK = 500
 export const ROAD = 120
+export const GRAVITY = 0.15
+export const JUMP_SPEED = 4.5
 
 export const CAR_COLORS = [
   '#e74c3c',
