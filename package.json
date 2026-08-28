@@ -15,6 +15,7 @@
     "format": "prettier --write \"src/**/*.{ts,tsx,css}\" \"*.{js,json}\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx,css}\""
   },
+
   "dependencies": {
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.6.1",
