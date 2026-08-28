@@ -11,7 +11,7 @@ import {
   isRoad,
 } from './constants'
 import { game, resetGame } from './state'
-import { generateCity, findRoadPoint } from './world'
+import { generateCity, findRoadPoint, stadiumPointAt } from './world'
 import { useGame } from '../store/useGame'
 import { initAudio, beep, gunshot, sfxEnter, sfxPickup, sfxDelivery, sfxSiren } from './audio'
 import { WEAPONS, VEHICLE_CLASSES } from './weapons'
@@ -235,24 +235,23 @@ function updateMission() {
 }
 
 /* ---------- race (multiplayer-only, host-triggered) ---------- */
-const RACE_CHECKPOINTS = 8
-const RACE_MIN_GAP = 700 // min distance between consecutive checkpoints
+// Raced on the dedicated rounded-rectangle circuit reserved in world.ts, not
+// scattered city road points — checkpoints sit exactly on its centerline via
+// the same stadiumPointAt() the track's own rendering uses, so course and
+// visuals always agree. The circuit itself is now long enough (~1min/lap)
+// that just 2 laps comfortably clears the intended 2+ minute race.
+const RACE_CHECKPOINTS_PER_LAP = 10
+const RACE_LAPS = 2
 const RACE_RESULTS_SECONDS = 8
 
 function generateRaceCourse() {
+  const track = game.cityData!.raceTrack
   const checkpoints: { x: number; z: number; r: number }[] = []
-  let prev: { x: number; z: number } | null = null
-  for (let i = 0; i < RACE_CHECKPOINTS; i++) {
-    let point = findRoadPoint()
-    for (
-      let tries = 0;
-      prev && tries < 20 && dist2(prev.x, prev.z, point.x, point.z) < RACE_MIN_GAP;
-      tries++
-    ) {
-      point = findRoadPoint()
-    }
-    checkpoints.push({ x: point.x, z: point.z, r: 50 })
-    prev = point
+  const step = track.perimeter / RACE_CHECKPOINTS_PER_LAP
+  const r = track.width * 0.8
+  for (let i = 0; i < RACE_CHECKPOINTS_PER_LAP * RACE_LAPS; i++) {
+    const p = stadiumPointAt(track, (i % RACE_CHECKPOINTS_PER_LAP) * step)
+    checkpoints.push({ x: p.x, z: p.z, r })
   }
   return checkpoints
 }
@@ -287,18 +286,30 @@ export function startRace() {
     pushToast(game.localPlayerId, 'Need at least 2 players to race', 1500)
     return
   }
+  const track = game.cityData!.raceTrack
+  const start = stadiumPointAt(track, 0)
+  const perpX = Math.cos(start.angle)
+  const perpZ = -Math.sin(start.angle)
+  const ids = Object.keys(game.players)
   const checkpoints = generateRaceCourse()
-  const start = checkpoints[0]
   const progress: Record<string, number> = {}
-  let i = 0
-  for (const id in game.players) {
-    const ox = start.x + (i % 3) * 24 - 24
-    const oz = start.z + Math.floor(i / 3) * 24
-    spawnRaceCar(game.players[id], ox, oz, 0)
+  ids.forEach((id, i) => {
+    const lateral = (i - (ids.length - 1) / 2) * 22
+    const ox = start.x + perpX * lateral
+    const oz = start.z + perpZ * lateral
+    spawnRaceCar(game.players[id], ox, oz, start.angle)
     progress[id] = 0
-    i++
+  })
+  game.race = {
+    phase: 'countdown',
+    countdown: 3,
+    checkpoints,
+    checkpointsPerLap: RACE_CHECKPOINTS_PER_LAP,
+    laps: RACE_LAPS,
+    progress,
+    results: [],
+    resultsT: 0,
   }
-  game.race = { phase: 'countdown', countdown: 3, checkpoints, progress, results: [], resultsT: 0 }
 }
 
 function updateRace() {
@@ -911,8 +922,23 @@ function fixedStep() {
         else if (ev === 'respawn') respawnPlayer(rp)
         else if (ev.startsWith('weapon')) switchWeapon(Number(ev.slice(6)), rp)
       }
+      // One-shot events must fire exactly once. game.remoteInputs[id] holds
+      // whatever input message arrived last — if the client's next message
+      // is ever late (a throttled tab, a GC pause, any hiccup), this same
+      // object keeps being read on every tick until a new one replaces it.
+      // Without clearing here, a held-over 'enter' would toggle the player
+      // in and out of their car every tick — exactly the kind of thing that
+      // looks like camera/position "shaking".
+      input.events = []
       if (rp.inCar) {
         updateCar(rp.inCar, true, input)
+        // Mirror the local-player path below: the player's own x/z/a (what
+        // gets broadcast to clients) must track their car while driving, or
+        // it stays frozen at wherever they entered it — which is exactly
+        // what made a driving remote player's camera look stuck in place.
+        rp.x = rp.inCar.x
+        rp.z = rp.inCar.z
+        rp.a = rp.inCar.a
         carHits(rp.inCar)
       } else {
         updateFoot(rp, input)

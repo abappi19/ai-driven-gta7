@@ -96,10 +96,26 @@ export interface RaceResult {
 export interface RaceState {
   phase: 'countdown' | 'racing' | 'finished'
   countdown: number // seconds left before racing starts
-  checkpoints: RaceCheckpoint[]
+  checkpoints: RaceCheckpoint[] // the per-lap checkpoints repeated `laps` times
+  checkpointsPerLap: number
+  laps: number
   progress: Record<string, number> // playerId -> index of their next checkpoint
   results: RaceResult[]
   resultsT: number // seconds left showing results before auto-clearing
+}
+
+// A dedicated rounded-rectangle racetrack: 4 straights (2*halfWidth wide,
+// 2*halfHeight tall) joined by 4 quarter-circle turns of cornerRadius,
+// centered at (cx, cz). Reserved as its own no-buildings zone in
+// generateCity() (see world.ts).
+export interface RaceTrack {
+  cx: number
+  cz: number
+  halfWidth: number
+  halfHeight: number
+  cornerRadius: number
+  width: number
+  perimeter: number
 }
 
 export interface Building {
@@ -131,6 +147,7 @@ export interface CityData {
   parks: ParkData[]
   cols: number
   rows: number
+  raceTrack: RaceTrack
 }
 
 export interface Player {

@@ -55,8 +55,8 @@ function RacePanel() {
       {raceInfo.phase === 'countdown' && <div className="race-countdown">{raceInfo.countdown}</div>}
       {raceInfo.phase === 'racing' && (
         <div className="race-progress">
-          Checkpoint {Math.min(raceInfo.myCheckpoint + 1, raceInfo.totalCheckpoints)}/
-          {raceInfo.totalCheckpoints}
+          Lap {raceInfo.lap}/{raceInfo.totalLaps} · Checkpoint {raceInfo.checkpointInLap}/
+          {raceInfo.checkpointsPerLap}
         </div>
       )}
       {raceInfo.phase === 'finished' && (

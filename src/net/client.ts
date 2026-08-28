@@ -240,17 +240,29 @@ function connectAsClient(name: string, isInitialAttempt: boolean): Promise<void>
         game.netRole = 'solo'
       }
     }
+    // The relay only broadcasts, never addresses a single client — so a
+    // routine snapshot the host was already mid-sending (generated just
+    // before it finished processing our `join`) can reach us before our own
+    // `welcome` does, listing everyone EXCEPT us yet. Applying that early
+    // would make reconcilePlayers() delete our own placeholder entry (its id
+    // isn't in the host's list), then `welcome` crashes trying to re-key an
+    // entry that's already gone — leaving `game.player` undefined for the
+    // rest of the session. So: ignore anything but `welcome` until it's in.
+    let identityConfirmed = false
     ws.onmessage = (ev) => {
       const msg: NetMessage = JSON.parse(ev.data)
       if (msg.t === 'welcome') {
         if (msg.forNonce !== nonce) return // meant for a different joiner
         setLocalIdentity(msg.id, name)
+        identityConfirmed = true
         useGame.getState().setNetStatus('connected')
         // On a reconnect, phase already reflects lobby-vs-playing from
         // before the drop (never touched while "connecting…") — only the
         // very first join needs to move it into the lobby.
         if (isInitialAttempt) useGame.getState().setPhase('lobby')
         resolve()
+      } else if (!identityConfirmed) {
+        return
       } else if (msg.t === 'roster') {
         useGame.getState().setLobbyPlayers(msg.players)
       } else if (msg.t === 'start') {
@@ -332,6 +344,10 @@ function reconcilePlayers(incoming: NetPlayer[]): boolean {
   const incomingIds = new Set(incoming.map((p) => p.id))
   let changed = false
   for (const id of Object.keys(game.players)) {
+    // Never drop our own entry — losing it would leave game.player (the
+    // localPlayerId-keyed accessor everything from the camera to the HUD
+    // reads) undefined for the rest of the session.
+    if (id === game.localPlayerId) continue
     if (!incomingIds.has(id)) {
       delete game.players[id]
       changed = true

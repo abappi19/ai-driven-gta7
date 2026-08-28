@@ -67,11 +67,15 @@ export default function Systems() {
         )
       }
       if (game.race) {
+        const perLap = game.race.checkpointsPerLap
+        const myIdx = game.race.progress[game.localPlayerId] ?? 0
         st.setRaceInfo({
           phase: game.race.phase,
           countdown: Math.max(0, Math.ceil(game.race.countdown)),
-          myCheckpoint: game.race.progress[game.localPlayerId] ?? 0,
-          totalCheckpoints: game.race.checkpoints.length,
+          lap: Math.min(game.race.laps, Math.floor(myIdx / perLap) + 1),
+          totalLaps: game.race.laps,
+          checkpointInLap: (myIdx % perLap) + 1,
+          checkpointsPerLap: perLap,
           results: game.race.results.map((r) => ({ name: r.name, place: r.place })),
         })
       } else if (st.raceInfo) {

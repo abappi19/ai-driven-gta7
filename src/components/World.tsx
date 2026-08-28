@@ -1,4 +1,5 @@
 import City from './City'
+import RaceTrack from './RaceTrack'
 import Lights from './Lights'
 import { Cars, Police } from './Vehicles'
 import Pedestrians from './Pedestrians'
@@ -18,6 +19,7 @@ export default function World() {
     <>
       <Lights />
       <City />
+      <RaceTrack />
       <Cars />
       <Police />
       <Pedestrians />

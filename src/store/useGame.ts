@@ -25,8 +25,10 @@ export interface RosterPlayer {
 export interface RaceInfo {
   phase: 'countdown' | 'racing' | 'finished'
   countdown: number
-  myCheckpoint: number
-  totalCheckpoints: number
+  lap: number
+  totalLaps: number
+  checkpointInLap: number
+  checkpointsPerLap: number
   results: { name: string; place: number }[]
 }
 
